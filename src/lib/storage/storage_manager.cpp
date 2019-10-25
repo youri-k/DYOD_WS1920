@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include <algorithm>
 
 #include "utils/assert.hpp"
 
@@ -21,7 +22,7 @@ void StorageManager::add_table(const std::string& name, std::shared_ptr<Table> t
 }
 
 void StorageManager::drop_table(const std::string& name) {
-  DebugAssert(has_table(name), "The table doesn't contain the requested table");
+  DebugAssert(has_table(name), "The storage manager doesn't know the requested table");
   _tables.erase(name);
 }
 
@@ -34,6 +35,9 @@ std::vector<std::string> StorageManager::table_names() const {
   for (auto const& table : _tables) {
     table_names.push_back(table.first);
   }
+
+  std::sort(table_names.begin(), table_names.end());
+
   return table_names;
 }
 
