@@ -78,12 +78,4 @@ Chunk& Table::get_chunk(ChunkID chunk_id) { return *(_chunks.at(chunk_id)); }
 
 const Chunk& Table::get_chunk(ChunkID chunk_id) const { return *(_chunks.at(chunk_id)); }
 
-void Table::emplace_chunk(Chunk chunk) {
-  /*if (row_count() == 0) {
-    _chunks.at(0) = std::shared_ptr<Chunk>(&chunk);
-  } else {
-    _chunks.push_back(std::shared_ptr<Chunk>(&chunk));
-  }*/
-}
-
 }  // namespace opossum

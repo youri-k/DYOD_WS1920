@@ -77,8 +77,9 @@ TEST_F(StorageTableTest, GetAllColumnNames) {
 }
 
 TEST_F(StorageTableTest, GetConstantChunk) {
-  const auto& chunk = t.get_chunk(ChunkID{0});
-  EXPECT_EQ(chunk.column_count(), 2);
+  const auto table = Table();
+  const Chunk& chunk = table.get_chunk(ChunkID{0});
+  EXPECT_EQ(chunk.column_count(), 0);
   // EXPECT_THROW(chunk.add_segment(std::make_shared<BaseSegment>()), std::exception);
 }
 
