@@ -47,4 +47,18 @@ TEST_F(StorageValueSegmentTest, AddValueOfDifferentType) {
   EXPECT_THROW(double_value_segment.append("Hi"), std::exception);
 }
 
+TEST_F(StorageValueSegmentTest, GetValueAtFixedPosition) {
+  int_value_segment.append(4);
+  EXPECT_EQ(int_value_segment[ChunkOffset{0}], AllTypeVariant(4));
+}
+
+TEST_F(StorageValueSegmentTest, GetAllValues) {
+  int_value_segment.append(1);
+  int_value_segment.append(2);
+  int_value_segment.append(3);
+
+  const auto test_vector = std::vector<int>{1, 2, 3};
+  EXPECT_EQ(int_value_segment.values(), test_vector);
+}
+
 }  // namespace opossum
