@@ -71,4 +71,15 @@ TEST_F(StorageTableTest, GetColumnIdByName) {
 
 TEST_F(StorageTableTest, GetChunkSize) { EXPECT_EQ(t.max_chunk_size(), 2u); }
 
+TEST_F(StorageTableTest, GetAllColumnNames) {
+  std::vector<std::string> test_vector{"col_1", "col_2"};
+  EXPECT_EQ(t.column_names(), test_vector);
+}
+
+TEST_F(StorageTableTest, GetConstantChunk) {
+  const auto& chunk = t.get_chunk(ChunkID{0});
+  EXPECT_EQ(chunk.column_count(), 2);
+  // EXPECT_THROW(chunk.add_segment(std::make_shared<BaseSegment>()), std::exception);
+}
+
 }  // namespace opossum
