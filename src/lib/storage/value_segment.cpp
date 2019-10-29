@@ -16,6 +16,7 @@ namespace opossum {
 template <typename T>
 AllTypeVariant ValueSegment<T>::operator[](const ChunkOffset chunk_offset) const {
   PerformanceWarning("operator[] used");
+  DebugAssert(chunk_offset >= 0 && chunk_offset < _data.size(), "chunk_offset doesn't fit into vector of values.");
 
   return _data[chunk_offset];
 }

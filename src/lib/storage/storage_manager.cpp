@@ -32,8 +32,10 @@ bool StorageManager::has_table(const std::string& name) const { return _tables.c
 
 std::vector<std::string> StorageManager::table_names() const {
   std::vector<std::string> table_names;
-  for (auto const& table : _tables) {
-    table_names.push_back(table.first);
+  table_names.reserve(_tables.size());
+
+  for (auto const& [name, _] : _tables) {
+    table_names.push_back(name);
   }
 
   std::sort(table_names.begin(), table_names.end());
@@ -42,14 +44,14 @@ std::vector<std::string> StorageManager::table_names() const {
 }
 
 void StorageManager::print(std::ostream& out) const {
-  for (auto const& table : _tables) {
-    out << table.first << ", ";
-    out << table.second->column_count() << ", ";
-    out << table.second->row_count() << ", ";
-    out << table.second->chunk_count() << std::endl;
+  for (auto const& [name, table] : _tables) {
+    out << name << ", ";
+    out << table->column_count() << ", ";
+    out << table->row_count() << ", ";
+    out << table->chunk_count() << std::endl;
   }
 }
 
-void StorageManager::reset() { _tables = std::unordered_map<std::string, std::shared_ptr<Table>>(); }
+void StorageManager::reset() { _tables.clear(); }
 
 }  // namespace opossum

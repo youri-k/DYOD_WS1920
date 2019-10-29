@@ -30,9 +30,7 @@ void Table::add_column(const std::string& name, const std::string& type) {
 }
 
 void Table::append(std::vector<AllTypeVariant> values) {
-  DebugAssert(values.size() == column_count(), "The number of values doesn't match number of columns.");
-
-  if (_chunks.back()->size() >= _max_chunk_size) {
+  if (_chunks.back()->size() + 1 > _max_chunk_size) {
     _chunks.push_back(std::make_shared<Chunk>());
 
     for (const auto& _column_type : _column_types) {
@@ -47,23 +45,18 @@ void Table::append(std::vector<AllTypeVariant> values) {
 
 uint16_t Table::column_count() const { return _chunks.front()->column_count(); }
 
-uint64_t Table::row_count() const {
-  uint64_t number_of_rows = 0;
-  for (const auto& chunk : _chunks) {
-    number_of_rows += chunk->size();
-  }
-  return number_of_rows;
-}
+uint64_t Table::row_count() const { return (_chunks.size() - 1) * _max_chunk_size + _chunks.back()->size(); }
 
-ChunkID Table::chunk_count() const { return (ChunkID)_chunks.size(); }
+ChunkID Table::chunk_count() const { return static_cast<ChunkID>(_chunks.size()); }
 
 ColumnID Table::column_id_by_name(const std::string& column_name) const {
-  auto column_id =
-      std::distance(_column_names.cbegin(), std::find(_column_names.cbegin(), _column_names.cend(), column_name));
+  auto element_it = std::find(_column_names.cbegin(), _column_names.cend(), column_name);
 
-  DebugAssert(column_id < static_cast<int64_t>(_column_names.size()), "The column couldn't be found.");
+  if (element_it == _column_names.cend()) throw std::out_of_range("Column name doesn't exist");
 
-  return (ColumnID)column_id;
+  auto column_id = std::distance(_column_names.cbegin(), element_it);
+
+  return static_cast<ColumnID>(column_id);
 }
 
 uint32_t Table::max_chunk_size() const { return _max_chunk_size; }

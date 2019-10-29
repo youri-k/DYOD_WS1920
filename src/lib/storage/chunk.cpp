@@ -14,25 +14,23 @@
 
 namespace opossum {
 
-void Chunk::add_segment(std::shared_ptr<BaseSegment> segment) { _columns.push_back(segment); }
+void Chunk::add_segment(std::shared_ptr<BaseSegment> segment) { _segments.push_back(segment); }
 
 void Chunk::append(const std::vector<AllTypeVariant>& values) {
-  DebugAssert(_columns.size() == values.size(), "The number of passed values doesn't match the number of columns.");
+  DebugAssert(_segments.size() == values.size(), "The number of passed values doesn't match the number of columns.");
 
-  for (auto column_id = 0ul; column_id < _columns.size(); column_id++) {
-    _columns[column_id]->append(values[column_id]);
+  for (ColumnID current_column_id{0}; current_column_id < column_count(); current_column_id++) {
+    _segments[current_column_id]->append(values[current_column_id]);
   }
 }
 
-std::shared_ptr<BaseSegment> Chunk::get_segment(ColumnID column_id) const { return _columns[column_id]; }
-
-uint16_t Chunk::column_count() const { return _columns.size(); }
-
-uint32_t Chunk::size() const {
-  if (_columns.empty()) {
-    return 0u;
-  }
-  return _columns[0]->size();
+std::shared_ptr<BaseSegment> Chunk::get_segment(ColumnID column_id) const {
+  DebugAssert(column_id < _segments.size(), "No segment exists for the given column_id.");
+  return _segments.at(column_id);
 }
+
+uint16_t Chunk::column_count() const { return _segments.size(); }
+
+uint32_t Chunk::size() const { return _segments.empty() ? 0u : _segments[0]->size(); }
 
 }  // namespace opossum

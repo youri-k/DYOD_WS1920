@@ -77,7 +77,7 @@ class Table : private Noncopyable {
   void append(std::vector<AllTypeVariant> values);
 
  protected:
-  uint32_t _max_chunk_size;
+  const uint32_t _max_chunk_size;
   std::vector<std::shared_ptr<Chunk>> _chunks;
   std::vector<std::string> _column_names;
   std::vector<std::string> _column_types;
