@@ -67,7 +67,7 @@ TEST_F(StorageStorageManagerTest, DebugPrint) {
 
   auto test_string = stringstream.str();
 
-  EXPECT_EQ(test_string, "second_table, 0, 0, 1\nfirst_table, 0, 0, 1\n");
+  EXPECT_EQ(test_string, "first_table, 0, 0, 1\nsecond_table, 0, 0, 1\n");
 }
 
 }  // namespace opossum

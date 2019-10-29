@@ -1,9 +1,9 @@
 #include "storage_manager.hpp"
 
 #include <algorithm>
+#include <map>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -22,11 +22,21 @@ void StorageManager::add_table(const std::string& name, std::shared_ptr<Table> t
 }
 
 void StorageManager::drop_table(const std::string& name) {
-  DebugAssert(has_table(name), "The storage manager doesn't know the requested table");
-  _tables.erase(name);
+  auto it = _tables.find(name);
+
+  if (it == _tables.end()) throw std::invalid_argument("Invalid table name");
+
+  _tables.erase(it);
 }
 
-std::shared_ptr<Table> StorageManager::get_table(const std::string& name) const { return _tables.at(name); }
+std::shared_ptr<Table> StorageManager::get_table(const std::string& name) const {
+  auto it = _tables.find(name);
+
+  if (it == _tables.end()) throw std::invalid_argument("Invalid table name");
+
+  // second is the actual shared_ptr to the table
+  return it->second;
+}
 
 bool StorageManager::has_table(const std::string& name) const { return _tables.count(name) != 0; }
 
