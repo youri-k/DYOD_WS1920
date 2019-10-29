@@ -1,9 +1,9 @@
 #pragma once
 
 #include <iostream>
+#include <map>
 #include <memory>
 #include <string>
-#include <map>
 #include <vector>
 
 #include "storage/table.hpp"

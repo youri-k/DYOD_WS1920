@@ -44,12 +44,10 @@ std::vector<std::string> StorageManager::table_names() const {
   std::vector<std::string> table_names;
   table_names.reserve(_tables.size());
 
-  for (auto const& [name, value] : _tables) {
-    (void)value;
-    table_names.push_back(name);
+  for (auto const& table_entry : _tables) {
+    // first is the name of the table
+    table_names.push_back(table_entry.first);
   }
-
-  std::sort(table_names.begin(), table_names.end());
 
   return table_names;
 }
