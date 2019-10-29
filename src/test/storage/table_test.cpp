@@ -54,14 +54,14 @@ TEST_F(StorageTableTest, GetColumnName) {
   EXPECT_EQ(t.column_name(ColumnID{0}), "col_1");
   EXPECT_EQ(t.column_name(ColumnID{1}), "col_2");
   // TODO(anyone): Do we want checks here?
-  // EXPECT_THROW(t.column_name(ColumnID{2}), std::exception);
+  EXPECT_THROW(t.column_name(ColumnID{2}), std::exception);
 }
 
 TEST_F(StorageTableTest, GetColumnType) {
   EXPECT_EQ(t.column_type(ColumnID{0}), "int");
   EXPECT_EQ(t.column_type(ColumnID{1}), "string");
   // TODO(anyone): Do we want checks here?
-  // EXPECT_THROW(t.column_type(ColumnID{2}), std::exception);
+  EXPECT_THROW(t.column_type(ColumnID{2}), std::exception);
 }
 
 TEST_F(StorageTableTest, GetColumnIdByName) {
@@ -80,7 +80,6 @@ TEST_F(StorageTableTest, GetConstantChunk) {
   const auto table = Table();
   const Chunk& chunk = table.get_chunk(ChunkID{0});
   EXPECT_EQ(chunk.column_count(), 0);
-  // EXPECT_THROW(chunk.add_segment(std::make_shared<BaseSegment>()), std::exception);
 }
 
 }  // namespace opossum
