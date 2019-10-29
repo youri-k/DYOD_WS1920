@@ -34,7 +34,8 @@ std::vector<std::string> StorageManager::table_names() const {
   std::vector<std::string> table_names;
   table_names.reserve(_tables.size());
 
-  for (auto const& [name, _] : _tables) {
+  for (auto const& [name, value] : _tables) {
+    (void)value;
     table_names.push_back(name);
   }
 
