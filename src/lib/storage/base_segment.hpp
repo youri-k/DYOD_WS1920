@@ -30,6 +30,6 @@ class BaseSegment : private Noncopyable {
   virtual size_t size() const = 0;
 
   // returns the calculated memory usage
-  virtual size_t estimate_memory_usage() const;
+  virtual size_t estimate_memory_usage() const = 0;
 };
 }  // namespace opossum
