@@ -16,19 +16,24 @@ namespace opossum {
 template <typename T>
 AllTypeVariant ValueSegment<T>::operator[](const ChunkOffset chunk_offset) const {
   PerformanceWarning("operator[] used");
+  DebugAssert(chunk_offset >= 0 && chunk_offset < _data.size(), "chunk_offset doesn't fit into vector of values.");
 
-  throw std::runtime_error("Implement ValueSegment::operator[]");
+  return _data[chunk_offset];
 }
 
 template <typename T>
 void ValueSegment<T>::append(const AllTypeVariant& val) {
-  // Implementation goes here
+  _data.push_back(type_cast<T>(val));
 }
 
 template <typename T>
 size_t ValueSegment<T>::size() const {
-  // Implementation goes here
-  return 0;
+  return _data.size();
+}
+
+template <typename T>
+const std::vector<T>& ValueSegment<T>::values() const {
+  return _data;
 }
 
 template <typename T>
