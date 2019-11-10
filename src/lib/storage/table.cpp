@@ -9,13 +9,14 @@
 #include <utility>
 #include <vector>
 
-#include "value_segment.hpp"
-
+#include "dictionary_segment.hpp"
 #include "resolve_type.hpp"
 #include "types.hpp"
 #include "utils/assert.hpp"
+#include "value_segment.hpp"
 
 namespace opossum {
+
 Table::Table(uint32_t chunk_size) : _max_chunk_size(chunk_size) { _chunks.emplace_back(); }
 
 void Table::add_column(const std::string& name, const std::string& type) {
@@ -71,6 +72,16 @@ Chunk& Table::get_chunk(ChunkID chunk_id) { return _chunks.at(chunk_id); }
 
 const Chunk& Table::get_chunk(ChunkID chunk_id) const { return _chunks.at(chunk_id); }
 
-void Table::compress_chunk(ChunkID chunk_id) { throw std::runtime_error("Implement Table::compress_chunk"); }
+void Table::compress_chunk(ChunkID chunk_id) {
+  auto new_chunk = Chunk();
+
+  for (auto segment_id = ColumnID{0}; segment_id < column_count(); segment_id++) {
+    auto dict_segment = opossum::make_shared_by_data_type<opossum::BaseSegment, opossum::DictionarySegment>(
+        column_type(segment_id), _chunks[chunk_id].get_segment(segment_id));
+    new_chunk.add_segment(dict_segment);
+  }
+
+  _chunks[chunk_id] = std::move(new_chunk);
+}
 
 }  // namespace opossum
