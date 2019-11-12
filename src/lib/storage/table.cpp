@@ -22,7 +22,7 @@ namespace opossum {
 Table::Table(uint32_t chunk_size) : _max_chunk_size(chunk_size) { _chunks.emplace_back(); }
 
 void Table::add_column(const std::string& name, const std::string& type) {
-  std::lock_guard<std::mutex> lock_guard(_access_mutex);
+  std::lock_guard<std::mutex> lock_guard(*_access_mutex);
   DebugAssert(row_count() == 0, "The table already contains data so adding a column is not possible.");
 
   _column_names.push_back(name);
@@ -34,7 +34,7 @@ void Table::add_column(const std::string& name, const std::string& type) {
 }
 
 void Table::append(std::vector<AllTypeVariant> values) {
-  std::lock_guard<std::mutex> lock_guard(_access_mutex);
+  std::lock_guard<std::mutex> lock_guard(*_access_mutex);
   if (_chunks.back().size() + 1 > _max_chunk_size) {
     _chunks.emplace_back();
 
@@ -73,14 +73,14 @@ const std::string& Table::column_name(ColumnID column_id) const { return _column
 const std::string& Table::column_type(ColumnID column_id) const { return _column_types.at(column_id); }
 
 Chunk& Table::get_chunk(ChunkID chunk_id) {
-  std::lock_guard<std::mutex> lock_guard(_access_mutex);
+  std::lock_guard<std::mutex> lock_guard(*_access_mutex);
   return _chunks.at(chunk_id);
 }
 
 const Chunk& Table::get_chunk(ChunkID chunk_id) const { return _chunks.at(chunk_id); }
 
 void Table::compress_chunk(ChunkID chunk_id) {
-  std::lock_guard<std::mutex> lock_guard(_access_mutex);
+  std::lock_guard<std::mutex> lock_guard(*_access_mutex);
   Chunk compressed_chunk;
   auto& current_chunk = _chunks.at(chunk_id);
 
