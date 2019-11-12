@@ -63,14 +63,14 @@ TEST_F(StorageDictionarySegmentTest, MemoryUsage) {
   auto col = opossum::make_shared_by_data_type<opossum::BaseSegment, opossum::DictionarySegment>("int", vc_int);
   auto dict_col = std::dynamic_pointer_cast<opossum::DictionarySegment<int>>(col);
 
-  EXPECT_EQ(dict_col->estimate_memory_usage(), 50);
+  EXPECT_EQ(dict_col->estimate_memory_usage(), 50u);
 
   for (int i = 0; i < 10; i++) vc_int->append(i);
 
   col = opossum::make_shared_by_data_type<opossum::BaseSegment, opossum::DictionarySegment>("int", vc_int);
   dict_col = std::dynamic_pointer_cast<opossum::DictionarySegment<int>>(col);
 
-  EXPECT_EQ(dict_col->estimate_memory_usage(), 60);
+  EXPECT_EQ(dict_col->estimate_memory_usage(), 60u);
 }
 
 TEST_F(StorageDictionarySegmentTest, GetValue) {
@@ -117,5 +117,3 @@ TEST_F(StorageDictionarySegmentTest, DifferentDatasetSizes) {
 
   EXPECT_EQ(dict_col->attribute_vector()->width(), 4);
 }
-
-// TODO(student): You should add some more tests here (full coverage would be appreciated) and possibly in other files.

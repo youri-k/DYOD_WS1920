@@ -1,11 +1,13 @@
 #include "table.hpp"
 
 #include <algorithm>
+#include <future>
 #include <iomanip>
 #include <limits>
 #include <memory>
 #include <numeric>
 #include <string>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -20,6 +22,7 @@ namespace opossum {
 Table::Table(uint32_t chunk_size) : _max_chunk_size(chunk_size) { _chunks.emplace_back(); }
 
 void Table::add_column(const std::string& name, const std::string& type) {
+  std::lock_guard<std::mutex> lock_guard(_access_mutex);
   DebugAssert(row_count() == 0, "The table already contains data so adding a column is not possible.");
 
   _column_names.push_back(name);
@@ -31,6 +34,7 @@ void Table::add_column(const std::string& name, const std::string& type) {
 }
 
 void Table::append(std::vector<AllTypeVariant> values) {
+  std::lock_guard<std::mutex> lock_guard(_access_mutex);
   if (_chunks.back().size() + 1 > _max_chunk_size) {
     _chunks.emplace_back();
 
@@ -68,20 +72,37 @@ const std::string& Table::column_name(ColumnID column_id) const { return _column
 
 const std::string& Table::column_type(ColumnID column_id) const { return _column_types.at(column_id); }
 
-Chunk& Table::get_chunk(ChunkID chunk_id) { return _chunks.at(chunk_id); }
+Chunk& Table::get_chunk(ChunkID chunk_id) {
+  std::lock_guard<std::mutex> lock_guard(_access_mutex);
+  return _chunks.at(chunk_id);
+}
 
 const Chunk& Table::get_chunk(ChunkID chunk_id) const { return _chunks.at(chunk_id); }
 
 void Table::compress_chunk(ChunkID chunk_id) {
-  auto new_chunk = Chunk();
+  std::lock_guard<std::mutex> lock_guard(_access_mutex);
+  Chunk compressed_chunk;
+  auto& current_chunk = _chunks.at(chunk_id);
 
-  for (auto segment_id = ColumnID{0}; segment_id < column_count(); segment_id++) {
-    auto dict_segment = opossum::make_shared_by_data_type<opossum::BaseSegment, opossum::DictionarySegment>(
-        column_type(segment_id), _chunks[chunk_id].get_segment(segment_id));
-    new_chunk.add_segment(dict_segment);
+  std::vector<std::thread> threads;
+  std::vector<std::shared_ptr<BaseSegment>> compressed_segments(_column_types.size());
+  threads.reserve(_column_types.size());
+
+  // compressing one chunks means turning all the ValueSegments into DictionarySegments
+  for (std::size_t i = 0; i < _column_types.size(); i++) {
+    threads.emplace_back([& compressed_segment = compressed_segments[i], &column_type = _column_types[i],
+                          value_segment = current_chunk.get_segment(ColumnID(i))] {
+      compressed_segment = make_shared_by_data_type<BaseSegment, DictionarySegment>(column_type, value_segment);
+    });
   }
 
-  _chunks[chunk_id] = std::move(new_chunk);
+  for (std::size_t i = 0; i < _column_types.size(); i++) {
+    threads[i].join();
+    compressed_chunk.add_segment(compressed_segments[i]);
+  }
+
+  // then switch the current chunk with the newly compressed one
+  current_chunk = std::move(compressed_chunk);
 }
 
 }  // namespace opossum

@@ -9,6 +9,7 @@
 
 #include "all_type_variant.hpp"
 #include "fixed_size_attribute_vector.hpp"
+#include "type_cast.hpp"
 #include "types.hpp"
 #include "value_segment.hpp"
 
@@ -29,7 +30,7 @@ class DictionarySegment : public BaseSegment {
    * Creates a Dictionary segment from a given value segment.
    */
   explicit DictionarySegment(const std::shared_ptr<BaseSegment>& base_segment) {
-    const auto value_segment = std::dynamic_pointer_cast<ValueSegment<T>>(base_segment);
+    const auto value_segment = std::static_pointer_cast<ValueSegment<T>>(base_segment);
     const auto values = value_segment->values();
 
     std::set<T> temp_value_set;
@@ -39,15 +40,13 @@ class DictionarySegment : public BaseSegment {
     }
 
     const auto set_size = temp_value_set.size();
+
     if (set_size <= std::numeric_limits<uint8_t>::max()) {
-      _attribute_vector =
-          std::dynamic_pointer_cast<BaseAttributeVector>(std::make_shared<FixedSizeAttributeVector<uint8_t>>());
+      _attribute_vector = std::make_shared<FixedSizeAttributeVector<uint8_t>>();
     } else if (set_size <= std::numeric_limits<uint16_t>::max()) {
-      _attribute_vector =
-          std::dynamic_pointer_cast<BaseAttributeVector>(std::make_shared<FixedSizeAttributeVector<uint16_t>>());
+      _attribute_vector = std::make_shared<FixedSizeAttributeVector<uint16_t>>();
     } else {
-      _attribute_vector =
-          std::dynamic_pointer_cast<BaseAttributeVector>(std::make_shared<FixedSizeAttributeVector<uint32_t>>());
+      _attribute_vector = std::make_shared<FixedSizeAttributeVector<uint32_t>>();
     }
 
     _dictionary = std::make_shared<std::vector<T>>(temp_value_set.cbegin(), temp_value_set.cend());
@@ -67,7 +66,7 @@ class DictionarySegment : public BaseSegment {
   }
 
   // return the value at a certain position.
-  T get(const size_t chunk_offset) const { return _dictionary->operator[](_attribute_vector->get(chunk_offset)); }
+  T get(const size_t chunk_offset) const { return _dictionary->at(_attribute_vector->get(chunk_offset)); }
 
   // dictionary segments are immutable
   void append(const AllTypeVariant&) override { throw std::runtime_error("Dictionary segments are immutable."); }
@@ -79,7 +78,7 @@ class DictionarySegment : public BaseSegment {
   std::shared_ptr<const BaseAttributeVector> attribute_vector() const { return _attribute_vector; }
 
   // return the value represented by a given ValueID
-  const T& value_by_value_id(ValueID value_id) const { return _dictionary->operator[](value_id); }
+  const T& value_by_value_id(ValueID value_id) const { return _dictionary->at(value_id); }
 
   // returns the first value ID that refers to a value >= the search value
   // returns INVALID_VALUE_ID if all values are smaller than the search value
@@ -90,11 +89,7 @@ class DictionarySegment : public BaseSegment {
   }
 
   // same as lower_bound(T), but accepts an AllTypeVariant
-  ValueID lower_bound(const AllTypeVariant& value) const {
-    const auto lower_bound_it = std::lower_bound(_dictionary->cbegin(), _dictionary->cend(), value);
-    const auto distance = static_cast<uint32_t>(lower_bound_it - _dictionary->cbegin());
-    return static_cast<ValueID>(distance >= _dictionary->size() ? INVALID_VALUE_ID : distance);
-  }
+  ValueID lower_bound(const AllTypeVariant& value) const { return lower_bound(type_cast<T>(value)); }
 
   // returns the first value ID that refers to a value > the search value
   // returns INVALID_VALUE_ID if all values are smaller than or equal to the search value
@@ -105,11 +100,7 @@ class DictionarySegment : public BaseSegment {
   }
 
   // same as upper_bound(T), but accepts an AllTypeVariant
-  ValueID upper_bound(const AllTypeVariant& value) const {
-    const auto upper_bound_it = std::upper_bound(_dictionary->cbegin(), _dictionary->cend(), value);
-    const auto distance = static_cast<uint32_t>(upper_bound_it - dictionary()->cbegin());
-    return static_cast<ValueID>(distance >= _dictionary->size() ? INVALID_VALUE_ID : distance);
-  }
+  ValueID upper_bound(const AllTypeVariant& value) const { return upper_bound(type_cast<T>(value)); }
 
   // return the number of unique_values (dictionary entries)
   size_t unique_values_count() const { return _dictionary->size(); }

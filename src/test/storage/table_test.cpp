@@ -86,11 +86,11 @@ TEST_F(StorageTableTest, CompressChunk) {
   t.append({4, "Hello,"});
   t.append({4, "world"});
 
-  EXPECT_EQ(t.get_chunk(ChunkID{0}).get_segment(ColumnID{0})->estimate_memory_usage(), 8);
+  EXPECT_EQ(t.get_chunk(ChunkID{0}).get_segment(ColumnID{0})->estimate_memory_usage(), 8u);
 
   t.compress_chunk(ChunkID{0});
 
-  EXPECT_EQ(t.get_chunk(ChunkID{0}).get_segment(ColumnID{0})->estimate_memory_usage(), 6);
+  EXPECT_EQ(t.get_chunk(ChunkID{0}).get_segment(ColumnID{0})->estimate_memory_usage(), 6u);
 }
 
 }  // namespace opossum
