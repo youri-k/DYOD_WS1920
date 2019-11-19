@@ -21,6 +21,10 @@ namespace opossum {
 
 Table::Table(uint32_t chunk_size) : _max_chunk_size(chunk_size) { _chunks.emplace_back(); }
 
+void Table::add_column_definition(const std::string& name, const std::string& type) {
+  // Implementation goes here
+}
+
 void Table::add_column(const std::string& name, const std::string& type) {
   std::lock_guard<std::mutex> lock_guard(*_access_mutex);
   DebugAssert(row_count() == 0, "The table already contains data so adding a column is not possible.");
@@ -49,6 +53,10 @@ void Table::append(std::vector<AllTypeVariant> values) {
 }
 
 uint16_t Table::column_count() const { return _chunks.front().column_count(); }
+
+void Table::create_new_chunk() {
+  // Implementation goes here
+}
 
 uint64_t Table::row_count() const { return (_chunks.size() - 1) * _max_chunk_size + _chunks.back().size(); }
 
@@ -103,6 +111,10 @@ void Table::compress_chunk(ChunkID chunk_id) {
 
   // then switch the current chunk with the newly compressed one
   current_chunk = std::move(compressed_chunk);
+}
+
+void emplace_chunk(Chunk chunk) {
+  // Implementation goes here
 }
 
 }  // namespace opossum
