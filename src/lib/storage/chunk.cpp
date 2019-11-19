@@ -26,7 +26,7 @@ void Chunk::append(const std::vector<AllTypeVariant>& values) {
 
 std::shared_ptr<BaseSegment> Chunk::get_segment(ColumnID column_id) const {
   DebugAssert(column_id < _segments.size(), "No segment exists for the given column_id.");
-  return _segments.at(column_id);
+  return _segments[column_id];
 }
 
 uint16_t Chunk::column_count() const { return _segments.size(); }
