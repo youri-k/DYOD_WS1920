@@ -1,6 +1,7 @@
 #include <memory>
 #include <string>
 
+#include "../base_test.hpp"
 #include "gtest/gtest.h"
 
 #include "../../lib/all_type_variant.hpp"
@@ -9,6 +10,8 @@
 #include "../../lib/storage/dictionary_segment.hpp"
 #include "../../lib/storage/value_segment.hpp"
 #include "../../lib/types.hpp"
+
+namespace opossum {
 
 class StorageDictionarySegmentTest : public ::testing::Test {
  protected:
@@ -117,3 +120,4 @@ TEST_F(StorageDictionarySegmentTest, DifferentDatasetSizes) {
 
   EXPECT_EQ(dict_col->attribute_vector()->width(), 4);
 }
+}  // namespace opossum

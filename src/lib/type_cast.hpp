@@ -21,7 +21,7 @@ namespace detail {
 template <typename Sequence, typename T>
 constexpr auto index_of(Sequence const& sequence, T const& element) {
   constexpr auto size = decltype(hana::size(hana::take_while(sequence, hana::not_equal.to(element)))){};
-  return decltype(size)::value;
+  return static_cast<size_t>(decltype(size)::value);
 }
 
 }  // namespace detail
@@ -38,7 +38,7 @@ const T& get(const AllTypeVariant& value) {
 // Template specialization for everything but integral types
 template <typename T>
 std::enable_if_t<!std::is_integral<T>::value, T> type_cast(const AllTypeVariant& value) {
-  if (value.which() == detail::index_of(types, hana::type_c<T>)) return get<T>(value);
+  if (static_cast<size_t>(value.which()) == detail::index_of(types, hana::type_c<T>)) return get<T>(value);
 
   return boost::lexical_cast<T>(value);
 }
@@ -46,7 +46,7 @@ std::enable_if_t<!std::is_integral<T>::value, T> type_cast(const AllTypeVariant&
 // Template specialization for integral types
 template <typename T>
 std::enable_if_t<std::is_integral<T>::value, T> type_cast(const AllTypeVariant& value) {
-  if (value.which() == detail::index_of(types, hana::type_c<T>)) return get<T>(value);
+  if (static_cast<size_t>(value.which()) == detail::index_of(types, hana::type_c<T>)) return get<T>(value);
 
   try {
     return boost::lexical_cast<T>(value);
