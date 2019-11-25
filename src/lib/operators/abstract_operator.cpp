@@ -17,10 +17,14 @@ AbstractOperator::AbstractOperator(const std::shared_ptr<const AbstractOperator>
 void AbstractOperator::execute() { _output = _on_execute(); }
 
 std::shared_ptr<const Table> AbstractOperator::get_output() const {
-  // TODO(anyone): You should place some meaningful checks here
+  Assert(_output, "Cannot retrieve output, since operator has not yet been executed.");
 
   return _output;
 }
+
+std::shared_ptr<const AbstractOperator> AbstractOperator::input_left() const { return _input_left; }
+
+std::shared_ptr<const AbstractOperator> AbstractOperator::input_right() const { return _input_right; }
 
 std::shared_ptr<const Table> AbstractOperator::_input_table_left() const { return _input_left->get_output(); }
 
