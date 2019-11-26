@@ -19,7 +19,7 @@ StorageManager& StorageManager::get() {
 
 void StorageManager::add_table(const std::string& name, std::shared_ptr<Table> table) {
   DebugAssert(!has_table(name), "Another table with the same name already exists.");
-  _tables.insert(std::make_pair(name, table));
+  _tables.insert({name, table});
 }
 
 void StorageManager::drop_table(const std::string& name) {

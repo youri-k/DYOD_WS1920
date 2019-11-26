@@ -19,10 +19,14 @@
 
 namespace opossum {
 
-Table::Table(uint32_t chunk_size) : _max_chunk_size(chunk_size) { _chunks.emplace_back(); }
+Table::Table(uint32_t chunk_size) : _max_chunk_size(chunk_size), _row_count(0) { _chunks.emplace_back(); }
 
 void Table::add_column_definition(const std::string& name, const std::string& type) {
-  // Implementation goes here
+  std::lock_guard<std::mutex> lock_guard(*_access_mutex);
+  DebugAssert(row_count() == 0, "The table already contains a chunk so adding a column definition is not possible.");
+
+  _column_names.push_back(name);
+  _column_types.push_back(type);
 }
 
 void Table::add_column(const std::string& name, const std::string& type) {
@@ -39,26 +43,26 @@ void Table::add_column(const std::string& name, const std::string& type) {
 
 void Table::append(std::vector<AllTypeVariant> values) {
   std::lock_guard<std::mutex> lock_guard(*_access_mutex);
-  if (_chunks.back().size() + 1 > _max_chunk_size) {
-    _chunks.emplace_back();
-
-    for (const auto& _column_type : _column_types) {
-      auto segment = make_shared_by_data_type<BaseSegment, ValueSegment>(_column_type);
-
-      _chunks.back().add_segment(segment);
-    }
-  }
+  if (_chunks.back().size() + 1 > _max_chunk_size) create_new_chunk();
 
   _chunks.back().append(values);
+
+  _row_count++;
 }
 
 uint16_t Table::column_count() const { return _chunks.front().column_count(); }
 
 void Table::create_new_chunk() {
-  // Implementation goes here
+  emplace_chunk(Chunk());
+
+  for (const auto& _column_type : _column_types) {
+    auto segment = make_shared_by_data_type<BaseSegment, ValueSegment>(_column_type);
+
+    _chunks.back().add_segment(segment);
+  }
 }
 
-uint64_t Table::row_count() const { return (_chunks.size() - 1) * _max_chunk_size + _chunks.back().size(); }
+uint64_t Table::row_count() const { return _row_count; }
 
 ChunkID Table::chunk_count() const { return static_cast<ChunkID>(_chunks.size()); }
 
@@ -113,8 +117,12 @@ void Table::compress_chunk(ChunkID chunk_id) {
   current_chunk = std::move(compressed_chunk);
 }
 
-void emplace_chunk(Chunk chunk) {
-  // Implementation goes here
+void Table::emplace_chunk(Chunk&& chunk) {
+  // When table is empty, replace the first chunk
+  if (!row_count()) _chunks.clear();
+
+  _row_count += chunk.size();
+  _chunks.emplace_back(std::move(chunk));
 }
 
 }  // namespace opossum
