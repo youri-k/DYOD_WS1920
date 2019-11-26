@@ -267,4 +267,31 @@ TEST_F(OperatorsTableScanTest, ScanOnWideDictionarySegment) {
   EXPECT_EQ(scan_2->get_output()->row_count(), static_cast<size_t>(37));
 }
 
+TEST_F(OperatorsTableScanTest, ScanOnDictUpperBound) {
+  // scanning for a value that is around the dictionary's bounds
+
+  std::map<ScanType, std::vector<AllTypeVariant>> tests;
+  tests[ScanType::OpEquals] = {108};
+  tests[ScanType::OpLessThan] = {100, 102, 104, 106};
+  tests[ScanType::OpLessThanEquals] = {100, 102, 104, 106, 108};
+  tests[ScanType::OpGreaterThan] = {110, 112, 114, 116, 118, 120, 122, 124};
+  tests[ScanType::OpGreaterThanEquals] = {108, 110, 112, 114, 116, 118, 120, 122, 124};
+  tests[ScanType::OpNotEquals] = {100, 102, 104, 106, 110, 112, 114, 116, 118, 120, 122, 124};
+
+  for (const auto& test : tests) {
+    auto scan = std::make_shared<opossum::TableScan>(_table_wrapper_even_dict, ColumnID{0}, test.first, 8);
+    scan->execute();
+
+    ASSERT_COLUMN_EQ(scan->get_output(), ColumnID{1}, test.second);
+  }
+}
+
+TEST_F(OperatorsTableScanTest, GetScanParameters) {
+  auto scan = std::make_shared<TableScan>(_table_wrapper, ColumnID{0}, ScanType::OpEquals, 1234);
+
+  EXPECT_EQ(scan->column_id(), ColumnID{0});
+  EXPECT_EQ(scan->scan_type(), ScanType::OpEquals);
+  EXPECT_EQ(scan->search_value(), AllTypeVariant(1234));
+}
+
 }  // namespace opossum

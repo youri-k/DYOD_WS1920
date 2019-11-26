@@ -17,6 +17,7 @@ AllTypeVariant ReferenceSegment::operator[](const ChunkOffset chunk_offset) cons
   const auto& chunk = _referenced_table->get_chunk(pos.chunk_id);
   const auto& segment = chunk.get_segment(_referenced_column_id);
 
+  // Finally, return the value from the Segment (can either be Dictionary of Value) for the given chunk_offset
   return (*segment)[pos.chunk_offset];
 }
 
