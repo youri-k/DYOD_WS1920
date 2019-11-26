@@ -40,8 +40,8 @@ std::function<bool(const T&)> get_compare_function(ScanType scan_type, T& search
   }
 }
 
-std::function<bool(const ValueID&)> get_bounds_compare_function(ScanType scan_type, ValueID lower_bound,
-                                                                ValueID upper_bound) {
+std::function<bool(const ValueID&)> get_bounds_compare_function(ScanType scan_type, const ValueID& lower_bound,
+                                                                const ValueID& upper_bound) {
   auto always = [](bool flag) {
     return std::function<bool(const ValueID&)>{[flag](const ValueID& value_id) { return flag; }};
   };
@@ -100,7 +100,7 @@ std::vector<ChunkOffset> scan_segment(std::function<bool(const T&)> compare,
   return chunk_offsets;
 }
 
-Chunk get_reference_chunk(std::shared_ptr<ReferenceSegment> reference_segment, uint16_t column_count) {
+Chunk get_reference_chunk(const std::shared_ptr<ReferenceSegment>& reference_segment, uint16_t column_count) {
   Chunk chunk;
 
   for (ColumnID column_id{0}; column_id < column_count; column_id++)
@@ -111,7 +111,7 @@ Chunk get_reference_chunk(std::shared_ptr<ReferenceSegment> reference_segment, u
 }
 
 template <typename T>
-void scan_table(std::shared_ptr<const Table> input_table, std::shared_ptr<Table> output_table, ColumnID column_id,
+void scan_table(std::shared_ptr<const Table> input_table, const std::shared_ptr<Table>& output_table, ColumnID column_id,
                 ScanType scan_type, T typed_search_value) {
   for (ChunkID chunk_id{0}; chunk_id < input_table->chunk_count(); chunk_id++) {
     auto& current_chunk = input_table->get_chunk(chunk_id);

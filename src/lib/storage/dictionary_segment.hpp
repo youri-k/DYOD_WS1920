@@ -92,7 +92,7 @@ class DictionarySegment : public BaseSegment {
   ValueID lower_bound(const AllTypeVariant& value) const { return lower_bound(type_cast<T>(value)); }
 
   // returns the first value ID that refers to a value > the search value
-  // returns INVALID_VALUE_ID if all values are smaller than or equal to the search value
+  // returns INVALID_VALUE_ID if all values are greater than or equal to the search value
   ValueID upper_bound(T value) const {
     const auto upper_bound_it = std::upper_bound(_dictionary->cbegin(), _dictionary->cend(), value);
     const auto distance = static_cast<uint32_t>(upper_bound_it - dictionary()->cbegin());
