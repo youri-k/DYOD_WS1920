@@ -20,6 +20,7 @@ const AllTypeVariant& TableScan::search_value() const { return _search_value; }
 
 namespace {
 
+// retrieves the compare operator as lambda function for a given scan_type and value
 template <typename T>
 std::function<bool(const T&)> get_compare_function(ScanType scan_type, T& search_value) {
   switch (scan_type) {
@@ -40,8 +41,13 @@ std::function<bool(const T&)> get_compare_function(ScanType scan_type, T& search
   }
 }
 
+// The get_bounds_compare_function allows for the usage of the lower_bound and upper_bound functionality
+// of the DictionarySegment and therefore returns a compare operator for the given scan_type that utilizes binary search
 std::function<bool(const ValueID&)> get_bounds_compare_function(ScanType scan_type, ValueID lower_bound,
                                                                 ValueID upper_bound) {
+  
+  // handle the case where you always want to return the same bool, no matter what the value_id is
+  // this lamba is used when the lower_bound of a DictionarySegment returns invalid
   auto always = [](bool flag) {
     return std::function<bool(const ValueID&)>{[flag](const ValueID& value_id) { return flag; }};
   };
@@ -88,6 +94,9 @@ std::function<bool(const ValueID&)> get_bounds_compare_function(ScanType scan_ty
   }
 }
 
+// Scans a segment of values and adds their chunk_offset to the returned container
+// if the passed compare operator returned true.
+// The element_accessor std::function parameter is used to access the actual values of the segment.
 template <typename T>
 std::vector<ChunkOffset> scan_segment(std::function<bool(const T&)> compare,
                                       std::function<const T(const ChunkOffset&)> element_accessor,
@@ -100,29 +109,23 @@ std::vector<ChunkOffset> scan_segment(std::function<bool(const T&)> compare,
   return chunk_offsets;
 }
 
-Chunk get_reference_chunk(std::shared_ptr<ReferenceSegment> reference_segment, uint16_t column_count) {
-  Chunk chunk;
-
-  for (ColumnID column_id{0}; column_id < column_count; column_id++)
-    // Create copy of reference segment before inserting it.
-    chunk.add_segment(std::make_shared<ReferenceSegment>(reference_segment->referenced_table(), column_id,
-                                                         reference_segment->pos_list()));
-  return chunk;
-}
-
+// Scans the input table and creates an output table containing a Chunk of ReferenceSegments pointing to the values 
+// that fulfill the compare operator with the given scan_type and search_value
 template <typename T>
 void scan_table(std::shared_ptr<const Table> input_table, std::shared_ptr<Table> output_table, ColumnID column_id,
                 ScanType scan_type, T typed_search_value) {
   for (ChunkID chunk_id{0}; chunk_id < input_table->chunk_count(); chunk_id++) {
     auto& current_chunk = input_table->get_chunk(chunk_id);
 
+    // no need to scan through the chunk if it's empty
     if (!current_chunk.size()) continue;
 
     auto current_segment = current_chunk.get_segment(column_id);
 
     std::vector<ChunkOffset> referenced_chunk_offsets;
 
-    // Calculate referenced chunk offsets according to Segment-Type
+    // Calculate referenced chunk offsets by scanning the segment values 
+    // Therefore cast the BaseSegment pointer to the appropriate concrete segment type by try-and-error
     if (auto value_segment = std::dynamic_pointer_cast<ValueSegment<T>>(current_segment); value_segment) {
       referenced_chunk_offsets = scan_segment(
           get_compare_function(scan_type, typed_search_value),
@@ -131,6 +134,8 @@ void scan_table(std::shared_ptr<const Table> input_table, std::shared_ptr<Table>
           value_segment->size());
     } else if (auto dictionary_segment = std::dynamic_pointer_cast<DictionarySegment<T>>(current_segment);
                dictionary_segment) {
+      // In the case of a DictionarySegment, we want to make use of the fact that the values are sorted
+      // That is why we use the lower and upper bound methods here and a different getter for the compare operator
       referenced_chunk_offsets = scan_segment<ValueID>(
           get_bounds_compare_function(scan_type, dictionary_segment->lower_bound(typed_search_value),
                                       dictionary_segment->upper_bound(typed_search_value)),
@@ -151,7 +156,7 @@ void scan_table(std::shared_ptr<const Table> input_table, std::shared_ptr<Table>
       throw std::runtime_error("TableScan only supports DictionarySegment, ValueSegment and ReferenceSegment.");
     }
 
-    // Don't append empty chunks to output_table
+    // Don't append an empty chunks to the output table
     if (referenced_chunk_offsets.empty()) continue;
 
     auto pos_list = std::make_shared<PosList>();
@@ -159,12 +164,12 @@ void scan_table(std::shared_ptr<const Table> input_table, std::shared_ptr<Table>
     // Generate PositionList for current chunk based on calculated chunk offsets
     for (auto& chunk_offset : referenced_chunk_offsets) pos_list->push_back({chunk_id, chunk_offset});
 
-    // Create Reference Segment from PositionList
-    auto reference_segment = std::make_shared<ReferenceSegment>(input_table, column_id, pos_list);
-
-    // Inflate ReferenceSegment to a Chunk, where every segment is a
-    // copy of ReferenceSegment and insert into output table.
-    output_table->emplace_chunk(get_reference_chunk(reference_segment, input_table->column_count()));
+    // Create the ouput ReferenceSegments from the PositionList for each column
+    Chunk output_chunk;
+    for (ColumnID column_id{0}; column_id < input_table->column_count(); column_id++) {
+      chunk.add_segment(std::make_shared<ReferenceSegment>(input_table, column_id, pos_list));
+    }
+    output_table->emplace_chunk(std::move(output_chunk));
   }
 }
 
