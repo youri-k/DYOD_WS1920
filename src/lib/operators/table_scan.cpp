@@ -166,9 +166,9 @@ void scan_table(std::shared_ptr<const Table> input_table, const std::shared_ptr<
 
     // Create the output ReferenceSegments from the PositionList for each column
     Chunk output_chunk;
-    for (ColumnID current_column_id{0}; current_column_id < input_table->column_count(); current_column_id++) {
+    for (ColumnID current_column_id{0}; current_column_id < input_table->column_count(); current_column_id++)
       output_chunk.add_segment(std::make_shared<ReferenceSegment>(input_table, current_column_id, pos_list));
-    }
+
     output_table->emplace_chunk(std::move(output_chunk));
   }
 }
@@ -192,7 +192,7 @@ std::shared_ptr<const Table> TableScan::_on_execute() {
   });
 
   // If the generated output_table is empty, we at least have to create an empty chunk
-  if (!output_table->row_count()) output_table->create_new_chunk();
+  if (output_table->row_count() == 0) output_table->create_new_chunk();
 
   return output_table;
 }
