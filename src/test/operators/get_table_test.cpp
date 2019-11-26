@@ -33,7 +33,7 @@ TEST_F(OperatorsGetTableTest, ThrowsUnknownTableName) {
 }
 
 TEST_F(OperatorsGetTableTest, GetTableName) {
-  auto gt  = std::make_shared<GetTable>("aNiceTestTable");
+  auto gt = std::make_shared<GetTable>("aNiceTestTable");
 
   EXPECT_EQ(gt->table_name(), "aNiceTestTable");
 }

@@ -1,4 +1,5 @@
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "resolve_type.hpp"
@@ -108,11 +109,11 @@ std::vector<ChunkOffset> scan_segment(std::function<bool(const T&)> compare,
   return chunk_offsets;
 }
 
-// Scans the input table and creates an output table containing a Chunk of ReferenceSegments pointing to the values 
+// Scans the input table and creates an output table containing a Chunk of ReferenceSegments pointing to the values
 // that fulfill the compare operator with the given scan_type and search_value
 template <typename T>
-void scan_table(std::shared_ptr<const Table> input_table, const std::shared_ptr<Table>& output_table, ColumnID column_id,
-                ScanType scan_type, T typed_search_value) {
+void scan_table(std::shared_ptr<const Table> input_table, const std::shared_ptr<Table>& output_table,
+                const ColumnID& column_id, ScanType scan_type, T typed_search_value) {
   for (ChunkID chunk_id{0}; chunk_id < input_table->chunk_count(); chunk_id++) {
     auto& current_chunk = input_table->get_chunk(chunk_id);
 
@@ -123,7 +124,7 @@ void scan_table(std::shared_ptr<const Table> input_table, const std::shared_ptr<
 
     std::vector<ChunkOffset> referenced_chunk_offsets;
 
-    // Calculate referenced chunk offsets by scanning the segment values 
+    // Calculate referenced chunk offsets by scanning the segment values
     // Therefore cast the BaseSegment pointer to the appropriate concrete segment type by try-and-error
     if (auto value_segment = std::dynamic_pointer_cast<ValueSegment<T>>(current_segment); value_segment) {
       referenced_chunk_offsets = scan_segment(
@@ -163,10 +164,10 @@ void scan_table(std::shared_ptr<const Table> input_table, const std::shared_ptr<
     // Generate PositionList for current chunk based on calculated chunk offsets
     for (auto& chunk_offset : referenced_chunk_offsets) pos_list->push_back({chunk_id, chunk_offset});
 
-    // Create the ouput ReferenceSegments from the PositionList for each column
+    // Create the output ReferenceSegments from the PositionList for each column
     Chunk output_chunk;
-    for (ColumnID column_id{0}; column_id < input_table->column_count(); column_id++) {
-      output_chunk.add_segment(std::make_shared<ReferenceSegment>(input_table, column_id, pos_list));
+    for (ColumnID current_column_id{0}; current_column_id < input_table->column_count(); current_column_id++) {
+      output_chunk.add_segment(std::make_shared<ReferenceSegment>(input_table, current_column_id, pos_list));
     }
     output_table->emplace_chunk(std::move(output_chunk));
   }
